@@ -16,6 +16,6 @@ BinomialNode* unir_arboles(BinomialNode *a, BinomialNode *b);
 BinomialNode* insertar(BinomialNode *node, int vertice, double costo);
 
 BinomialNode* extraer_min(BinomialNode *head, int *vertice, double *costo);
-BinomialNode* disminuir_costo(BinomialNode *head, int vertice, double nuevo_costo);
+void disminuir_costo(BinomialNode *x, double nuevo_costo);
 
 #endif
