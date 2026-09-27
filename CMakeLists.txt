@@ -8,4 +8,5 @@ include_directories(include)
 add_executable(Tarea1_cc4102
         src/main.c
         src/binomial_queue.c
+        include/leer_grafo.h
 )
