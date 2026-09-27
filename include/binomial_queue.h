@@ -3,20 +3,19 @@
 
 typedef struct BinomialNode {
     int vertice;
-    int costo;
-    int degree;
+    double costo;
+    int grado;
     struct BinomialNode *parent;
     struct BinomialNode *child;
     struct BinomialNode *sibling;
 } BinomialNode;
 
 
-BinomialNode* crear_nodo(int vertice, int costo);
+BinomialNode* crear_nodo(int vertice, double costo);
 BinomialNode* unir_arboles(BinomialNode *a, BinomialNode *b);
+BinomialNode* insertar(BinomialNode *node, int vertice, double costo);
 
-
-BinomialNode* link_trees(BinomialNode *a, BinomialNode *b);
-BinomialNode* insert_binomial(BinomialNode *head, int vertice, int costo);
-BinomialNode* extract_min(BinomialNode *head, int *vertice, int *costo);
+BinomialNode* extraer_min(BinomialNode *head, int *vertice, double *costo);
+BinomialNode* disminuir_costo(BinomialNode *head, int vertice, double nuevo_costo);
 
 #endif
