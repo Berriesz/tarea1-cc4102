@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
     int i = atoi(argv[1]);
     int j = atoi(argv[2]);
     const char *outpath = argv[3];
-    unsigned long seed = strtoul(argv[4], NULL, 10);
+    unsigned long seed = (argc > 4) ? strtoul(argv[4], NULL, 10) : (unsigned long)time(NULL);
     
     // Definir v y e                     
     long long v = 1LL << i;

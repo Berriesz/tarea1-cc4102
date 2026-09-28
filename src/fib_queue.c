@@ -20,9 +20,10 @@ FibNode* crear_nodo_fib(int vertice, double costo) {
 }
 
 
-FibNode* insertar_fib(FibNode *node, int vertice, double costo) {
+FibNode* insertar_fib(FibNode *node, FibNode **pos, int vertice, double costo) {
     
     FibNode *nuevo_nodo = crear_nodo_fib(vertice, costo);
+    pos[vertice] = nuevo_nodo; 
 
     if (node == NULL) {
         return nuevo_nodo; 
@@ -41,7 +42,7 @@ FibNode* insertar_fib(FibNode *node, int vertice, double costo) {
 }
 
 
-FibNode* extraer_min_fib(FibNode *node, int *vertice, double *costo) {
+FibNode* extraer_min_fib(FibNode *node, FibNode **pos, int *vertice, double *costo) {
     if (node == NULL) {
         *vertice = -1;
         *costo = -1.0;
@@ -51,6 +52,7 @@ FibNode* extraer_min_fib(FibNode *node, int *vertice, double *costo) {
     FibNode *z = node;
     *vertice = z->vertice;
     *costo = z->costo;
+    pos[z->vertice] = NULL; 
 
     if (z->hijo != NULL) {
         FibNode *h = z->hijo;

@@ -14,9 +14,9 @@ typedef struct FibNode {
 } FibNode;
 
 FibNode* crear_nodo_fib(int vertice, double costo);
-FibNode* insertar_fib(FibNode *node, int vertice, double costo);
+FibNode* insertar_fib(FibNode *node, FibNode **pos, int vertice, double costo);
 FibNode* consolidar_fib(FibNode *node);
-FibNode* extraer_min_fib(FibNode *node, int *vertice, double *costo);
+FibNode* extraer_min_fib(FibNode *node, FibNode **pos, int *vertice, double *costo);
 void enlazar_fib(FibNode *y, FibNode *x);
 
 void cortar_fib(FibNode *minimo, FibNode *x, FibNode *y);
