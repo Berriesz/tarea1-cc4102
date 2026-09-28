@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-/* --- Estructura para una arista --- */
+/* --- Estructura para una arista al generarla, es diferente a Arista de leer_grafo.c así que se nombra Edge por claridad --- */
 
 typedef struct {
     int u;
@@ -43,7 +43,7 @@ typedef struct {
     int capacidad;
 } Lista;
 
-static void lista_init(Lista *l) {
+void lista_init(Lista *l) {
     l->vecinos = NULL;
     l->cantidad = 0;
     l->capacidad = 0;
@@ -52,7 +52,7 @@ static void lista_init(Lista *l) {
 /* --- Funciones auxiliares para listas de adyacencia de nodos --- */
 
 // Buscar si un nodo ya esta en la lista de otro nodo
-static int lista_contiene(const Lista *l, int x) {
+int lista_contiene(const Lista *l, int x) {
     for (int k = 0; k < l->cantidad; k++) {
         if (l->vecinos[k] == x) return 1;
     }
@@ -60,7 +60,7 @@ static int lista_contiene(const Lista *l, int x) {
 }
 
 // Agregar un nodo a la lista de otro nodo, estas listas son arreglos dinamicos (se duplica su tamaño si requiere mas memoria)
-static void lista_agregar(Lista *l, int x) {
+void lista_agregar(Lista *l, int x) {
     if (l->cantidad == l->capacidad) {
         l->capacidad = (l->capacidad == 0) ? 4 : l->capacidad * 2;
         l->vecinos = (int *)realloc(l->vecinos, l->capacidad * sizeof(int));
@@ -68,7 +68,7 @@ static void lista_agregar(Lista *l, int x) {
     l->vecinos[l->cantidad++] = x;
 }
 // Agregar la artista (a,b) en ambos sentidos, si no existia previamente
-static int agregar_si_no_existe(Lista *adj, int a, int b) {
+int agregar_si_no_existe(Lista *adj, int a, int b) {
     if (lista_contiene(&adj[a], b)) return 0;  // Ya existia
     lista_agregar(&adj[a], b);
     lista_agregar(&adj[b], a);
@@ -78,7 +78,7 @@ static int agregar_si_no_existe(Lista *adj, int a, int b) {
 /* --- Utilidades de aleatoriedad --- */
 
 // Entero uniforme en [0,n) para las primeras conexiones de los nodos
-static long long rand_below(long long n) {
+long long rand_below(long long n) {
     double frac = (double)rand() / ((double)RAND_MAX + 1.0);
     long long r = (long long)(frac * (double)n);
     if (r >= n) r = n - 1; 
@@ -87,7 +87,7 @@ static long long rand_below(long long n) {
 }
 
 // Double uniforme en (0,1] para los pesos de los nodos
-static double rand_weight(void) {
+double rand_weight(void) {
     double frac = (double)rand() / ((double)RAND_MAX + 1.0);
     return 1.0 - frac;
 }
