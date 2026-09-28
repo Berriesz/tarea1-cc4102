@@ -1,0 +1,218 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "fib_queue.h"
+
+
+FibNode* crear_nodo_fib(int vertice, double costo) {
+
+    FibNode *n = (FibNode *)malloc(sizeof(FibNode));
+    n->vertice = vertice;
+    n->costo = costo;
+    n->grado = 0;
+    n->marcado = 0;
+    n->padre = NULL;
+    n->hijo = NULL;
+    n->izq = n;   
+    n->der = n;   
+
+    return n;
+}
+
+
+FibNode* insertar_fib(FibNode *node, int vertice, double costo) {
+    
+    FibNode *nuevo_nodo = crear_nodo_fib(vertice, costo);
+
+    if (node == NULL) {
+        return nuevo_nodo; 
+    }
+    nuevo_nodo->der = node->der;
+    nuevo_nodo->izq = node;
+    node->der->izq = nuevo_nodo;
+    node->der = nuevo_nodo;
+
+        
+    if (nuevo_nodo->costo < node->costo) {
+        node = nuevo_nodo; // nuevo nodo es el mínimo
+    }
+    return node;
+    
+}
+
+
+FibNode* extraer_min_fib(FibNode *node, int *vertice, double *costo) {
+    if (node == NULL) {
+        *vertice = -1;
+        *costo = -1.0;
+        return NULL;
+    }
+
+    FibNode *z = node;
+    *vertice = z->vertice;
+    *costo = z->costo;
+
+    if (z->hijo != NULL) {
+        FibNode *h = z->hijo;
+
+        h->padre = NULL;
+        FibNode *c = h->der;
+        while (c != h) {
+            c->padre = NULL;
+            c = c->der;
+        }
+
+        FibNode *z_der = z->der;
+        FibNode *h_izq = h->izq;
+
+        z->der = h;
+        h->izq = z;
+        h_izq->der = z_der;
+        z_der->izq = h_izq;
+    }
+
+    if (z == z->der) {
+        free(z);
+        return NULL;
+    }
+
+    FibNode *nuevo_inicio = z->der;
+    z->izq->der = z->der;
+    z->der->izq = z->izq;
+    free(z);
+
+    return consolidar_fib(nuevo_inicio);
+}
+
+
+FibNode* consolidar_fib(FibNode *node) {
+
+
+    int n = 1;
+    for (FibNode *r = node->der; r != node; r = r->der) n++;
+
+    FibNode **raices = (FibNode **)malloc(n * sizeof(FibNode *));
+    raices[0] = node;
+    int k = 1;
+    for (FibNode *r = node->der; r != node; r = r->der) raices[k++] = r;
+
+    for (int i = 0; i < n; i++) {
+        raices[i]->izq = raices[i];
+        raices[i]->der = raices[i];
+    }
+
+    FibNode *tabla[64];
+    for (int d = 0; d < 64; d++) tabla[d] = NULL;
+
+    for (int i = 0; i < n; i++) {
+        FibNode *x = raices[i];
+        int d = x->grado;
+        while (tabla[d] != NULL) {
+            FibNode *y = tabla[d];
+            if (y->costo < x->costo) {   // x debe quedar como el de menor costo
+                FibNode *tmp = x;
+                x = y;
+                y = tmp;
+            }
+            enlazar_fib(y, x);
+            tabla[d] = NULL;
+            d++;
+        }
+        tabla[d] = x;
+    }
+    free(raices);
+
+    FibNode *min = NULL;
+    for (int d = 0; d < 64; d++) {
+        FibNode *t = tabla[d];
+        if (t == NULL) continue;
+        if (min == NULL) {
+            min = t;
+        } else {
+            t->izq = min;
+            t->der = min->der;
+            min->der->izq = t;
+            min->der = t;
+            if (t->costo < min->costo) min = t;
+        }
+    }
+    return min;
+}
+
+
+
+
+void enlazar_fib(FibNode *y, FibNode *x) {
+    y->izq = y;      
+    y->der = y;
+    y->padre = x;
+    y->marcado = 0;
+
+    if (x->hijo == NULL) {
+        x->hijo = y;
+    } else {
+        FibNode *h = x->hijo;
+        y->izq = h;
+        y->der = h->der;
+        h->der->izq = y;
+        h->der = y;
+    }
+    x->grado++;
+}
+
+
+
+void cortar_fib(FibNode *minimo, FibNode *x, FibNode *y) {
+
+    if (x->der == x) {
+        y->hijo = NULL;              
+    } else {
+        if (y->hijo == x) {
+            y->hijo = x->der;        
+        }
+        x->izq->der = x->der;
+        x->der->izq = x->izq;
+    }
+    y->grado--;
+
+    
+    x->izq = minimo;
+    x->der = minimo->der;
+    minimo->der->izq = x;
+    minimo->der = x;
+
+
+    x->padre = NULL;
+    x->marcado = 0;
+}
+
+void corte_en_cascada_fib(FibNode *minimo, FibNode *y) {
+    FibNode *z = y->padre;
+    if (z != NULL) {
+        if (y->marcado == 0) {
+            y->marcado = 1;
+        } else {
+            cortar_fib(minimo, y, z);
+            corte_en_cascada_fib(minimo, z);
+        }
+    }
+}
+
+FibNode* disminuir_costo_fib(FibNode *minimo, FibNode *x, double nuevo_costo) {
+    if (nuevo_costo >= x->costo) {
+        return minimo;               
+    }
+
+    x->costo = nuevo_costo;
+    FibNode *y = x->padre;
+
+    if (y != NULL && x->costo < y->costo) {
+        cortar_fib(minimo, x, y);
+        corte_en_cascada_fib(minimo, y);
+    }
+
+    if (x->costo < minimo->costo) {
+        minimo = x;
+    }
+    return minimo;
+}

@@ -1,26 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "fib_queue.h"
 #include "binomial_queue.h"
+#include "leer_grafo.h"
+
+
+
 
 int main(void) {
-    BinomialNode *cola = NULL;   // cola vacia al empezar
-
-    double costos[8] = {5.0, 2.0, 9.0, 1.0, 7.0, 3.0, 8.0, 4.0};
-
+    FibNode *minimo = NULL;
+    double costos[8] = {50.0, 20.0, 90.0, 10.0, 70.0, 30.0, 80.0, 40.0};
     for (int v = 0; v < 8; v++) {
-        cola = insertar(cola, v, costos[v]);
+        minimo = insertar_fib(minimo, v, costos[v]);
     }
 
-    // recorremos la lista de raices imprimiendo cada arbol
-    printf("=== Estado final de la cola ===\n");
-    int cantidad_arboles = 0;
-    for (BinomialNode *r = cola; r != NULL; r = r->sibling) {
-        printf("  arbol B%d -> raiz: vertice=%d costo=%.1f\n",
-               r->grado, r->vertice, r->costo);
-        cantidad_arboles++;
-    }
-    printf("Total de arboles: %d\n", cantidad_arboles);
-    printf("(deberia salir: Total de arboles: 1, y ese arbol B3)\n");
+    int v; double c;
+    minimo = extraer_min_fib(minimo, &v, &c);   // saca vertice 3 (costo 10); ahora hay arboles con hijos
+    printf("extraido: vertice=%d costo=%.1f\n", v, c);
 
+    // bajamos el vertice 2 (costo 90) a 5.0
+    FibNode *x = buscar(minimo, 2);
+    minimo = disminuir_costo_fib(minimo, x, 5.0);
+
+    for (int i = 0; i < 7; i++) {
+        minimo = extraer_min_fib(minimo, &v, &c);
+        printf("extraido: vertice=%d costo=%.1f\n", v, c);
+    }
+    // primero 3/10.0; luego deberia salir: 2/5.0, 1/20.0, 5/30.0, 7/40.0, 0/50.0, 4/70.0, 6/80.0
     return 0;
 }
