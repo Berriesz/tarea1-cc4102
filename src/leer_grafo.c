@@ -9,28 +9,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "leer_grafo.h"
 
-// Estructura de vecino con su peso asociado
-typedef struct {
-    int vecino;
-    double peso;
-} Arista;
-
-// Lista dinamica de aristas salientes de un nodo 
-typedef struct {
-    Arista *aristas;
-    int cantidad;
-    int capacidad;
-} Lista;
 
 // Inicializar lista
-static void lista_init(Lista *l) {
+void lista_init(Lista *l) {
     l->aristas = NULL;
     l->cantidad = 0;
     l->capacidad = 0;
 }
 
-static void lista_agregar(Lista *l, int vecino, double peso) {
+void lista_agregar(Lista *l, int vecino, double peso) {
     if (l->cantidad == l->capacidad) {
         l->capacidad = (l->capacidad == 0) ? 4 : l->capacidad * 2;
         l->aristas = (Arista *)realloc(l->aristas, l->capacidad * sizeof(Arista));
@@ -41,7 +30,7 @@ static void lista_agregar(Lista *l, int vecino, double peso) {
 }
 
 /* Funcion principal: lee el archivo y deja el grafo en *adj_out (arreglo de v listas). */
-static void leer_grafo(const char *path, long long *v_out, long long *e_out, Lista **adj_out) {
+void leer_grafo(const char *path, long long *v_out, long long *e_out, Lista **adj_out) {
     FILE *f = fopen(path, "r");
  
     // Leer cantidad de aristas y vertices
@@ -69,5 +58,10 @@ static void leer_grafo(const char *path, long long *v_out, long long *e_out, Lis
     *v_out = v;
     *e_out = e;
     *adj_out = adj;
+}
+
+void liberar_grafo(Lista *adj, long long v) {
+    for (long long k = 0; k < v; k++) free(adj[k].aristas);
+    free(adj);
 }
 
