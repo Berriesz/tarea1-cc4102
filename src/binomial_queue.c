@@ -2,30 +2,27 @@
 #include <stdlib.h>
 #include "binomial_queue.h"
 
-BinomialNode* crear_nodo(int vertice, double costo){
-    BinomialNode  *new = (BinomialNode *)malloc(sizeof(BinomialNode));
-    new->vertice = vertice;
-    new->costo = costo;
-    new->grado = 0;
-    new->parent = NULL;
-    new->child = NULL;
-    new->sibling = NULL;
-    return new;
+BinomialNode* crear_nodo_bi(int vertice, double costo) {
+    BinomialNode *nuevo = (BinomialNode *)malloc(sizeof(BinomialNode));
+    nuevo->vertice = vertice;
+    nuevo->costo = costo;
+    nuevo->grado = 0;
+    nuevo->parent = NULL;
+    nuevo->child = NULL;
+    nuevo->sibling = NULL;
+    return nuevo;
 }
 
-BinomialNode* unir_arboles(BinomialNode *a, BinomialNode *b){
-
+BinomialNode* unir_arboles_bi(BinomialNode *a, BinomialNode *b) {
     BinomialNode *winner;
     BinomialNode *loser;
     BinomialNode *hijoViejo;
 
-    if(a->costo >= b->costo){
-
+    if (a->costo >= b->costo) {
         winner = b;
         hijoViejo = b->child;
         loser = a;
-
-    } else{
+    } else {
         winner = a;
         hijoViejo = a->child;
         loser = b;
@@ -39,102 +36,126 @@ BinomialNode* unir_arboles(BinomialNode *a, BinomialNode *b){
     return winner;
 }
 
-BinomialNode* fusionar(BinomialNode *node, BinomialNode *arbol){
-
-    if (node == NULL){
-        return arbol;
+// Mezcla dos listas de raices (ya ordenadas por grado) en una sola ordenada
+BinomialNode* mezclar_listas_bi(BinomialNode *a, BinomialNode *b) {
+    BinomialNode dummy;
+    dummy.sibling = NULL;
+    BinomialNode *cola = &dummy;
+    while (a != NULL && b != NULL) {
+        if (a->grado <= b->grado) {
+            cola->sibling = a;
+            a = a->sibling;
+        } else {
+            cola->sibling = b;
+            b = b->sibling;
+        }
+        cola = cola->sibling;
     }
-
-    BinomialNode *hermano;
-    while (node != NULL && node->grado == arbol->grado) {
-        hermano = node->sibling;
-        arbol = unir_arboles(node, arbol);
-        node = hermano;
-    }
-    arbol->sibling = node;
-    return arbol;
-
+    cola->sibling = (a != NULL) ? a : b;
+    return dummy.sibling;
 }
 
-BinomialNode* insertar( BinomialNode *node, int vertice, double costo){
-    if (node == NULL) {
-        return crear_nodo(vertice, costo);
+// Une dos colas binomiales completas
+BinomialNode* unir_colas_bi(BinomialNode *a, BinomialNode *b) {
+    BinomialNode *head = mezclar_listas_bi(a, b);
+    if (head == NULL) return NULL;
+
+    BinomialNode *prev = NULL, *x = head, *next = x->sibling;
+    while (next != NULL) {
+        if (x->grado != next->grado ||
+            (next->sibling != NULL && next->sibling->grado == x->grado)) {
+            prev = x;
+            x = next;
+        } else {
+            BinomialNode *despues = next->sibling;
+            BinomialNode *w = unir_arboles_bi(x, next);
+            w->sibling = despues;
+            if (prev == NULL) head = w; else prev->sibling = w;
+            x = w;
+        }
+        next = x->sibling;
     }
-    BinomialNode *actual = crear_nodo(vertice, costo);
+    return head;
+}
+
+BinomialNode* insertar_bi(BinomialNode *node, BinomialNode **pos, int vertice, double costo) {
+    BinomialNode *actual = crear_nodo_bi(vertice, costo);
     BinomialNode *hermano;
+    pos[vertice] = actual;
+
+    if (node == NULL) return actual;
+
     while (node != NULL && node->grado == actual->grado) {
         hermano = node->sibling;
-        actual = unir_arboles(node, actual);
+        actual = unir_arboles_bi(node, actual);
         node = hermano;
     }
     actual->sibling = node;
     return actual;
 }
 
-
-BinomialNode* extraer_min(BinomialNode *head, int *vertice, double *costo){
-
-    if(head == NULL){
+BinomialNode* extraer_min_bi(BinomialNode *head, BinomialNode **pos, int *vertice, double *costo) {
+    if (head == NULL) {
         *vertice = -1;
         *costo = -1.0;
         return NULL;
     }
 
+    // buscar la raiz minima
     BinomialNode *min_node = head;
     BinomialNode *prev = NULL;
     BinomialNode *current = head;
-    for (BinomialNode *r = head -> sibling; r != NULL; r = r->sibling) {
-        
-        if(r->costo < min_node->costo){
+    for (BinomialNode *r = head->sibling; r != NULL; r = r->sibling) {
+        if (r->costo < min_node->costo) {
             min_node = r;
             prev = current;
         }
         current = r;
     }
 
-    if(prev == NULL){
-        head = min_node->sibling;
-    } else{
-        prev->sibling = min_node->sibling;
-    }
+    // sacarla de la lista de raices
+    if (prev == NULL) head = min_node->sibling;
+    else prev->sibling = min_node->sibling;
 
-    BinomialNode *child = min_node->child;
-    while(child != NULL){
-        BinomialNode *next_child = child->sibling;
-        child->parent = NULL;
-        child->sibling = NULL;
-        head = fusionar(head, child);
-        child = next_child;
+    // dar vuelta la lista de hijos (quedan en grado creciente)
+    BinomialNode *rev = NULL;
+    BinomialNode *c = min_node->child;
+    while (c != NULL) {
+        BinomialNode *sig = c->sibling;
+        c->parent  = NULL;
+        c->sibling = rev;
+        rev = c;
+        c = sig;
     }
+    head = unir_colas_bi(head, rev);
 
     *vertice = min_node->vertice;
     *costo = min_node->costo;
+    pos[min_node->vertice] = NULL;
     free(min_node);
     return head;
 }
-void disminuir_costo(BinomialNode *node, double nuevo_costo){
 
-    if (nuevo_costo >= node->costo) {
-        return; // No se puede aumentar el costo
-    }
+void disminuir_costo_bi(BinomialNode *node, BinomialNode **pos, double nuevo_costo) {
+    if (nuevo_costo >= node->costo) return;
 
     node->costo = nuevo_costo;
     BinomialNode *x = node;
     BinomialNode *y = x->parent;
 
     while (y != NULL && x->costo < y->costo) {
-        int temp_vertice = x->vertice;
-        double temp_costo = x->costo;
+        int temp_vertice = y->vertice;
+        double temp_costo = y->costo;
 
         y->vertice = x->vertice;
-        y->costo = x->costo;
-
+        y->costo   = x->costo;
         x->vertice = temp_vertice;
-        x->costo = temp_costo;
+        x->costo   = temp_costo;
 
-        y = x;
-        x = y->parent;
+        pos[y->vertice] = y;
+        pos[x->vertice] = x;
+
+        x = y;
+        y = x->parent;
     }
-
 }
-
