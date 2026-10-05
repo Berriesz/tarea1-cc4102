@@ -1,6 +1,12 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "binomial_queue.h"
+
+long long llamadas_decrease_bi = 0;
+long long intercambios_bi = 0;
+double tiempo_decrease_bi = 0.0;
 
 /*
  * crear_nodo_bi
@@ -14,15 +20,19 @@
  *   Puntero al nodo creado (árbol de grado 0).
  */
 BinomialNode* crear_nodo_bi(int vertice, double costo) {
+
     BinomialNode *nuevo = (BinomialNode *)malloc(sizeof(BinomialNode));
+
     nuevo->vertice = vertice;
     nuevo->costo = costo;
     nuevo->grado = 0;
     nuevo->parent = NULL;
     nuevo->child = NULL;
     nuevo->sibling = NULL;
+
     return nuevo;
 }
+
 
 /*
  * unir_arboles_bi
@@ -36,6 +46,7 @@ BinomialNode* crear_nodo_bi(int vertice, double costo) {
  *   Puntero a la raíz del árbol resultante.
  */
 BinomialNode* unir_arboles_bi(BinomialNode *a, BinomialNode *b) {
+
     BinomialNode *winner;
     BinomialNode *loser;
     BinomialNode *hijoViejo;
@@ -50,14 +61,13 @@ BinomialNode* unir_arboles_bi(BinomialNode *a, BinomialNode *b) {
         loser = b;
     }
 
-    loser->parent  = winner;
+    loser->parent = winner;
     loser->sibling = hijoViejo;
-    winner->child  = loser;
+    winner->child = loser;
     winner->grado++;
 
     return winner;
 }
-
 /*
  * mezclar_listas_bi
  * Mezcla dos listas de raíces, cada una ordenada por grado creciente, en una
@@ -71,10 +81,14 @@ BinomialNode* unir_arboles_bi(BinomialNode *a, BinomialNode *b) {
  *   Puntero a la primera raíz de la lista mezclada.
  */
 BinomialNode* mezclar_listas_bi(BinomialNode *a, BinomialNode *b) {
+
     BinomialNode dummy;
     dummy.sibling = NULL;
+
     BinomialNode *cola = &dummy;
+
     while (a != NULL && b != NULL) {
+
         if (a->grado <= b->grado) {
             cola->sibling = a;
             a = a->sibling;
@@ -82,11 +96,15 @@ BinomialNode* mezclar_listas_bi(BinomialNode *a, BinomialNode *b) {
             cola->sibling = b;
             b = b->sibling;
         }
+
         cola = cola->sibling;
     }
+
     cola->sibling = (a != NULL) ? a : b;
+
     return dummy.sibling;
 }
+
 
 /*
  * unir_colas_bi
@@ -101,28 +119,43 @@ BinomialNode* mezclar_listas_bi(BinomialNode *a, BinomialNode *b) {
  *   Puntero a la primera raíz de la cola resultante, o NULL si ambas estaban
  *   vacías.
  */
-BinomialNode* unir_colas_bi(BinomialNode *a, BinomialNode *b) {
+
+ BinomialNode* unir_colas_bi(BinomialNode *a, BinomialNode *b) {
+
     BinomialNode *head = mezclar_listas_bi(a, b);
+
     if (head == NULL) return NULL;
 
-    BinomialNode *prev = NULL, *x = head, *next = x->sibling;
+    BinomialNode *prev = NULL;
+    BinomialNode *x = head;
+    BinomialNode *next = x->sibling;
+
     while (next != NULL) {
+
         if (x->grado != next->grado ||
             (next->sibling != NULL && next->sibling->grado == x->grado)) {
+
             prev = x;
             x = next;
+
         } else {
             BinomialNode *despues = next->sibling;
             BinomialNode *w = unir_arboles_bi(x, next);
+
             w->sibling = despues;
-            if (prev == NULL) head = w; else prev->sibling = w;
+
+            if (prev == NULL)
+                head = w;
+            else
+                prev->sibling = w;
+
             x = w;
         }
         next = x->sibling;
     }
+
     return head;
 }
-
 /*
  * insertar_bi
  * Inserta un vértice con su costo en la cola. Crea un árbol de grado 0 y lo
@@ -138,14 +171,18 @@ BinomialNode* unir_colas_bi(BinomialNode *a, BinomialNode *b) {
  * Retorna:
  *   Puntero a la primera raíz de la cola actualizada.
  */
-BinomialNode* insertar_bi(BinomialNode *node, BinomialNode **pos, int vertice, double costo) {
+BinomialNode* insertar_bi(BinomialNode *node, BinomialNode **pos,
+                          int vertice, double costo) {
+
     BinomialNode *actual = crear_nodo_bi(vertice, costo);
     BinomialNode *hermano;
+
     pos[vertice] = actual;
 
     if (node == NULL) return actual;
 
     while (node != NULL && node->grado == actual->grado) {
+
         hermano = node->sibling;
         actual = unir_arboles_bi(node, actual);
         node = hermano;
@@ -170,45 +207,55 @@ BinomialNode* insertar_bi(BinomialNode *node, BinomialNode **pos, int vertice, d
  * Retorna:
  *   Puntero a la primera raíz de la cola actualizada (NULL si quedó vacía).
  */
-BinomialNode* extraer_min_bi(BinomialNode *head, BinomialNode **pos, int *vertice, double *costo) {
+BinomialNode* extraer_min_bi(BinomialNode *head, BinomialNode **pos,
+                             int *vertice, double *costo) {
+
     if (head == NULL) {
         *vertice = -1;
         *costo = -1.0;
         return NULL;
     }
 
-    // buscar la raiz minima
+    // Buscar la raiz minima
     BinomialNode *min_node = head;
     BinomialNode *prev = NULL;
     BinomialNode *current = head;
+
     for (BinomialNode *r = head->sibling; r != NULL; r = r->sibling) {
         if (r->costo < min_node->costo) {
             min_node = r;
             prev = current;
         }
+
         current = r;
     }
 
-    // sacarla de la lista de raices
-    if (prev == NULL) head = min_node->sibling;
-    else prev->sibling = min_node->sibling;
+    // Sacarla de la lista de raices
+    if (prev == NULL)
+        head = min_node->sibling;
+    else
+        prev->sibling = min_node->sibling;
 
-    // dar vuelta la lista de hijos (quedan en grado creciente)
+    // Dar vuelta la lista de hijos
     BinomialNode *rev = NULL;
     BinomialNode *c = min_node->child;
+
     while (c != NULL) {
         BinomialNode *sig = c->sibling;
-        c->parent  = NULL;
+
+        c->parent = NULL;
         c->sibling = rev;
+
         rev = c;
         c = sig;
     }
-    head = unir_colas_bi(head, rev);
 
+    head = unir_colas_bi(head, rev);
     *vertice = min_node->vertice;
     *costo = min_node->costo;
     pos[min_node->vertice] = NULL;
     free(min_node);
+
     return head;
 }
 
@@ -227,21 +274,41 @@ BinomialNode* extraer_min_bi(BinomialNode *head, BinomialNode **pos, int *vertic
  * Retorna:
  *   Nada. La lista de raíces no cambia, así que no se retorna una nueva cabeza.
  */
-void disminuir_costo_bi(BinomialNode *node, BinomialNode **pos, double nuevo_costo) {
-    if (nuevo_costo >= node->costo) return;
+void disminuir_costo_bi(BinomialNode *node, BinomialNode **pos,
+                         double nuevo_costo) {
+
+    struct timespec inicio;
+    struct timespec fin;
+    llamadas_decrease_bi++;
+    clock_gettime(CLOCK_MONOTONIC, &inicio);
+
+    if (nuevo_costo >= node->costo) {
+        clock_gettime(CLOCK_MONOTONIC, &fin);
+
+        tiempo_decrease_bi +=
+            (fin.tv_sec - inicio.tv_sec) * 1000000000.0
+            + (fin.tv_nsec - inicio.tv_nsec);
+
+        return;
+    }
 
     node->costo = nuevo_costo;
+
     BinomialNode *x = node;
     BinomialNode *y = x->parent;
 
     while (y != NULL && x->costo < y->costo) {
+
         int temp_vertice = y->vertice;
         double temp_costo = y->costo;
 
         y->vertice = x->vertice;
-        y->costo   = x->costo;
+        y->costo = x->costo;
+
         x->vertice = temp_vertice;
-        x->costo   = temp_costo;
+        x->costo = temp_costo;
+
+        intercambios_bi++;
 
         pos[y->vertice] = y;
         pos[x->vertice] = x;
@@ -249,4 +316,10 @@ void disminuir_costo_bi(BinomialNode *node, BinomialNode **pos, double nuevo_cos
         x = y;
         y = x->parent;
     }
+
+    clock_gettime(CLOCK_MONOTONIC, &fin);
+
+    tiempo_decrease_bi +=
+        (fin.tv_sec - inicio.tv_sec) * 1000000000.0
+        + (fin.tv_nsec - inicio.tv_nsec);
 }
