@@ -3,7 +3,19 @@
 
 #include "fib_queue.h"
 
-
+/*
+ * crear_nodo_fib
+ * Crea un nodo nuevo de cola de Fibonacci, sin padre ni hijos y sin marcar.
+ * Sus punteros izq y der apuntan a sí mismo, formando una lista circular de
+ * un solo elemento.
+ *
+ * Parámetros:
+ *   vertice: vértice del grafo que representa el nodo.
+ *   costo:   costo (clave) asociado al vértice.
+ *
+ * Retorna:
+ *   Puntero al nodo creado.
+ */
 FibNode* crear_nodo_fib(int vertice, double costo) {
 
     FibNode *n = (FibNode *)malloc(sizeof(FibNode));
@@ -19,7 +31,21 @@ FibNode* crear_nodo_fib(int vertice, double costo) {
     return n;
 }
 
-
+/*
+ * insertar_fib
+ * Inserta un vértice con su costo en la cola. Crea un nodo y lo agrega a la
+ * lista de raíces, a la derecha del mínimo, sin unir árboles. Actualiza el
+ * mínimo si corresponde y registra el nodo creado en pos[vertice].
+ *
+ * Parámetros:
+ *   node:    raíz de menor costo de la cola (NULL si está vacía).
+ *   pos:     arreglo de punteros desde cada vértice a su nodo en la cola.
+ *   vertice: vértice a insertar.
+ *   costo:   costo inicial del vértice.
+ *
+ * Retorna:
+ *   Puntero a la raíz de menor costo de la cola actualizada.
+ */
 FibNode* insertar_fib(FibNode *node, FibNode **pos, int vertice, double costo) {
     
     FibNode *nuevo_nodo = crear_nodo_fib(vertice, costo);
@@ -41,7 +67,21 @@ FibNode* insertar_fib(FibNode *node, FibNode **pos, int vertice, double costo) {
     
 }
 
-
+/*
+ * extraer_min_fib
+ * Extrae el nodo de menor costo de la cola. Sube sus hijos a la lista de
+ * raíces, lo saca de la lista, lo libera y consolida la cola. Deja
+ * pos[vertice] en NULL.
+ *
+ * Parámetros:
+ *   node:    raíz de menor costo de la cola (NULL si está vacía).
+ *   pos:     arreglo de punteros desde cada vértice a su nodo en la cola.
+ *   vertice: salida; vértice extraído (-1 si la cola estaba vacía).
+ *   costo:   salida; costo del vértice extraído (-1.0 si la cola estaba vacía).
+ *
+ * Retorna:
+ *   Puntero a la nueva raíz de menor costo (NULL si la cola quedó vacía).
+ */
 FibNode* extraer_min_fib(FibNode *node, FibNode **pos, int *vertice, double *costo) {
     if (node == NULL) {
         *vertice = -1;
@@ -86,7 +126,20 @@ FibNode* extraer_min_fib(FibNode *node, FibNode **pos, int *vertice, double *cos
     return consolidar_fib(nuevo_inicio);
 }
 
-
+/*
+ * consolidar_fib
+ * Une los árboles de la lista de raíces hasta que no queden dos raíces del
+ * mismo grado. Primero copia las raíces a un arreglo, para no modificar la
+ * lista mientras se recorre. Luego usa una tabla indexada por grado para ir
+ * uniendo árboles de igual grado. Al final rearma la lista de raíces y busca
+ * el nuevo mínimo.
+ *
+ * Parámetros:
+ *   node: cualquier raíz de la lista de raíces (no puede ser NULL).
+ *
+ * Retorna:
+ *   Puntero a la raíz de menor costo de la cola consolidada.
+ */
 FibNode* consolidar_fib(FibNode *node) {
 
 
@@ -141,9 +194,18 @@ FibNode* consolidar_fib(FibNode *node) {
     return min;
 }
 
-
-
-
+/*
+ * enlazar_fib
+ * Une dos árboles del mismo grado: la raíz y pasa a ser hija de la raíz x.
+ * Desmarca a y y aumenta el grado de x.
+ *
+ * Parámetros:
+ *   y: raíz que pasa a ser hija (la de mayor o igual costo).
+ *   x: raíz que queda como padre (la de menor costo).
+ *
+ * Retorna:
+ *   Nada.
+ */
 void enlazar_fib(FibNode *y, FibNode *x) {
     y->izq = y;      
     y->der = y;
@@ -162,8 +224,20 @@ void enlazar_fib(FibNode *y, FibNode *x) {
     x->grado++;
 }
 
-
-
+/*
+ * cortar_fib
+ * Corta el nodo x de su padre y: lo saca de la lista de hijos de y, disminuye
+ * el grado de y y agrega x a la lista de raíces, a la derecha del mínimo.
+ * Deja x sin padre y sin marcar.
+ *
+ * Parámetros:
+ *   minimo: raíz de menor costo de la cola.
+ *   x:      nodo a cortar.
+ *   y:      padre de x.
+ *
+ * Retorna:
+ *   Nada.
+ */
 void cortar_fib(FibNode *minimo, FibNode *x, FibNode *y) {
 
     if (x->der == x) {
@@ -188,6 +262,20 @@ void cortar_fib(FibNode *minimo, FibNode *x, FibNode *y) {
     x->marcado = 0;
 }
 
+/*
+ * corte_en_cascada_fib
+ * Aplica la regla de cortes en cascada sobre y, que acaba de perder un hijo.
+ * Si y no estaba marcado, lo marca. Si ya estaba marcado (perdió su segundo
+ * hijo), lo corta de su padre y repite el proceso con ese padre. Si y es
+ * raíz, no hace nada.
+ *
+ * Parámetros:
+ *   minimo: raíz de menor costo de la cola.
+ *   y:      nodo que acaba de perder un hijo.
+ *
+ * Retorna:
+ *   Nada.
+ */
 void corte_en_cascada_fib(FibNode *minimo, FibNode *y) {
     FibNode *z = y->padre;
     if (z != NULL) {
@@ -200,6 +288,21 @@ void corte_en_cascada_fib(FibNode *minimo, FibNode *y) {
     }
 }
 
+/*
+ * disminuir_costo_fib
+ * Disminuye el costo de un nodo (decreaseKey). Si el nuevo costo queda menor
+ * que el de su padre, corta el nodo, lo mueve a la lista de raíces y aplica
+ * los cortes en cascada. Actualiza el mínimo si corresponde. Si el nuevo
+ * costo no es menor que el actual, no hace nada.
+ *
+ * Parámetros:
+ *   minimo:      raíz de menor costo de la cola.
+ *   x:           nodo cuyo costo se quiere disminuir.
+ *   nuevo_costo: nuevo costo del vértice.
+ *
+ * Retorna:
+ *   Puntero a la raíz de menor costo de la cola, que puede ser x.
+ */
 FibNode* disminuir_costo_fib(FibNode *minimo, FibNode *x, double nuevo_costo) {
     if (nuevo_costo >= x->costo) {
         return minimo;               
