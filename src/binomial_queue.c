@@ -2,6 +2,17 @@
 #include <stdlib.h>
 #include "binomial_queue.h"
 
+/*
+ * crear_nodo_bi
+ * Crea un nodo nuevo de cola binomial, sin padre, hijos ni hermanos.
+ *
+ * Parámetros:
+ *   vertice: vértice del grafo que representa el nodo.
+ *   costo:   costo (clave) asociado al vértice.
+ *
+ * Retorna:
+ *   Puntero al nodo creado (árbol de grado 0).
+ */
 BinomialNode* crear_nodo_bi(int vertice, double costo) {
     BinomialNode *nuevo = (BinomialNode *)malloc(sizeof(BinomialNode));
     nuevo->vertice = vertice;
@@ -13,6 +24,17 @@ BinomialNode* crear_nodo_bi(int vertice, double costo) {
     return nuevo;
 }
 
+/*
+ * unir_arboles_bi
+ * Une dos árboles binomiales del mismo grado k en uno de grado k+1.
+ * La raíz de menor costo queda como raíz, y la otra pasa a ser su primer hijo.
+ *
+ * Parámetros:
+ *   a, b: raíces de los dos árboles a unir (deben tener el mismo grado).
+ *
+ * Retorna:
+ *   Puntero a la raíz del árbol resultante.
+ */
 BinomialNode* unir_arboles_bi(BinomialNode *a, BinomialNode *b) {
     BinomialNode *winner;
     BinomialNode *loser;
@@ -36,7 +58,18 @@ BinomialNode* unir_arboles_bi(BinomialNode *a, BinomialNode *b) {
     return winner;
 }
 
-// Mezcla dos listas de raices (ya ordenadas por grado) en una sola ordenada
+/*
+ * mezclar_listas_bi
+ * Mezcla dos listas de raíces, cada una ordenada por grado creciente, en una
+ * sola lista ordenada por grado. No une árboles: puede dejar dos raíces del
+ * mismo grado seguidas.
+ *
+ * Parámetros:
+ *   a, b: primeras raíces de cada lista (pueden ser NULL).
+ *
+ * Retorna:
+ *   Puntero a la primera raíz de la lista mezclada.
+ */
 BinomialNode* mezclar_listas_bi(BinomialNode *a, BinomialNode *b) {
     BinomialNode dummy;
     dummy.sibling = NULL;
@@ -55,7 +88,19 @@ BinomialNode* mezclar_listas_bi(BinomialNode *a, BinomialNode *b) {
     return dummy.sibling;
 }
 
-// Une dos colas binomiales completas
+/*
+ * unir_colas_bi
+ * Une dos colas binomiales en una sola. Primero mezcla sus listas de raíces y
+ * luego une los árboles de igual grado, de modo que no quede ningún grado
+ * repetido.
+ *
+ * Parámetros:
+ *   a, b: primeras raíces de cada cola (pueden ser NULL).
+ *
+ * Retorna:
+ *   Puntero a la primera raíz de la cola resultante, o NULL si ambas estaban
+ *   vacías.
+ */
 BinomialNode* unir_colas_bi(BinomialNode *a, BinomialNode *b) {
     BinomialNode *head = mezclar_listas_bi(a, b);
     if (head == NULL) return NULL;
@@ -78,6 +123,21 @@ BinomialNode* unir_colas_bi(BinomialNode *a, BinomialNode *b) {
     return head;
 }
 
+/*
+ * insertar_bi
+ * Inserta un vértice con su costo en la cola. Crea un árbol de grado 0 y lo
+ * une con las primeras raíces mientras tengan su mismo grado, como al sumar 1
+ * a un contador binario. Registra el nodo creado en pos[vertice].
+ *
+ * Parámetros:
+ *   node:    primera raíz de la cola (NULL si está vacía).
+ *   pos:     arreglo de punteros desde cada vértice a su nodo en la cola.
+ *   vertice: vértice a insertar.
+ *   costo:   costo inicial del vértice.
+ *
+ * Retorna:
+ *   Puntero a la primera raíz de la cola actualizada.
+ */
 BinomialNode* insertar_bi(BinomialNode *node, BinomialNode **pos, int vertice, double costo) {
     BinomialNode *actual = crear_nodo_bi(vertice, costo);
     BinomialNode *hermano;
@@ -94,6 +154,22 @@ BinomialNode* insertar_bi(BinomialNode *node, BinomialNode **pos, int vertice, d
     return actual;
 }
 
+/*
+ * extraer_min_bi
+ * Extrae el nodo de menor costo de la cola. Busca la raíz mínima, la saca de
+ * la lista de raíces, invierte la lista de sus hijos (para dejarla en grado
+ * creciente) y la une con el resto de la cola. Libera el nodo extraído y deja
+ * pos[vertice] en NULL.
+ *
+ * Parámetros:
+ *   head:    primera raíz de la cola (NULL si está vacía).
+ *   pos:     arreglo de punteros desde cada vértice a su nodo en la cola.
+ *   vertice: salida; vértice extraído (-1 si la cola estaba vacía).
+ *   costo:   salida; costo del vértice extraído (-1.0 si la cola estaba vacía).
+ *
+ * Retorna:
+ *   Puntero a la primera raíz de la cola actualizada (NULL si quedó vacía).
+ */
 BinomialNode* extraer_min_bi(BinomialNode *head, BinomialNode **pos, int *vertice, double *costo) {
     if (head == NULL) {
         *vertice = -1;
@@ -136,6 +212,21 @@ BinomialNode* extraer_min_bi(BinomialNode *head, BinomialNode **pos, int *vertic
     return head;
 }
 
+/*
+ * disminuir_costo_bi
+ * Disminuye el costo de un nodo (decreaseKey). Mientras el nodo tenga menor
+ * costo que su padre, intercambia el contenido (vértice y costo) de ambos y
+ * actualiza sus entradas en pos. Si el nuevo costo no es menor que el actual,
+ * no hace nada.
+ *
+ * Parámetros:
+ *   node:        nodo cuyo costo se quiere disminuir.
+ *   pos:         arreglo de punteros desde cada vértice a su nodo en la cola.
+ *   nuevo_costo: nuevo costo del vértice.
+ *
+ * Retorna:
+ *   Nada. La lista de raíces no cambia, así que no se retorna una nueva cabeza.
+ */
 void disminuir_costo_bi(BinomialNode *node, BinomialNode **pos, double nuevo_costo) {
     if (nuevo_costo >= node->costo) return;
 
