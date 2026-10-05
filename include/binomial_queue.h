@@ -46,4 +46,9 @@ BinomialNode* extraer_min_bi(BinomialNode *head, BinomialNode **pos, int *vertic
 // Disminuye el costo de un nodo intercambiando contenido con sus ancestros.
 void disminuir_costo_bi(BinomialNode *x, BinomialNode **pos, double nuevo_costo);
 
+extern long long llamadas_decrease_bi;
+extern long long intercambios_bi;
+extern double tiempo_decrease_bi;
+
+
 #endif

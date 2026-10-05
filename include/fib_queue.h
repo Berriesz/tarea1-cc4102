@@ -52,5 +52,7 @@ void corte_en_cascada_fib(FibNode *minimo, FibNode *y);
 
 // Disminuye el costo de un nodo y retorna el mínimo actualizado.
 FibNode* disminuir_costo_fib(FibNode *minimo, FibNode *x, double nuevo_costo);
-
+extern long long llamadas_decrease_fib;
+extern long long cortes_fib;
+extern double tiempo_decrease_fib;
 #endif // FIB_QUEUE_H
